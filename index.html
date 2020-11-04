@@ -1,14 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="node_modules\@fortawesome\fontawesome-free\css\all.css" rel="stylesheet">
-    <link rel="stylesheet" href="node_modules\leaflet\dist\leaflet.css"/>
-    <script src="node_modules\leaflet\dist\leaflet.js"></script>
-    <link rel="stylesheet" type="text/css" href="node_modules\leaflet-sidebar-v2\css\leaflet-sidebar.css">
-    <script src="node_modules\leaflet-sidebar-v2\js\leaflet-sidebar.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Load fontawesome -->
+    <link href="node_modules\@fortawesome\fontawesome-free\css\all.css" rel="stylesheet">
+
+    <!-- Load Leaflet -->
+    <link rel="stylesheet" href="node_modules\leaflet\dist\leaflet.css"/>
+    <script src="node_modules\leaflet\dist\leaflet.js"></script>
+
+    <!-- Load Leaflet Sidebar -->
+    <link rel="stylesheet" type="text/css" href="node_modules\leaflet-sidebar-v2\css\leaflet-sidebar.css">
+    <script src="node_modules\leaflet-sidebar-v2\js\leaflet-sidebar.js"></script>
+
+    <!-- Load Esri Leaflet from CDN -->
+    <script src="https://unpkg.com/esri-leaflet@2.5.1/dist/esri-leaflet.js"
+        integrity="sha512-q7X96AASUF0hol5Ih7AeZpRF6smJS55lcvy+GLWzJfZN+31/BQ8cgNx2FGF+IQSA4z2jHwB20vml+drmooqzzQ=="
+        crossorigin=""></script>
+
+    <!-- Load Esri Leaflet Geocoder from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.css"
+    integrity="sha512-IM3Hs+feyi40yZhDH6kV8vQMg4Fh20s9OzInIIAc4nx7aMYMfo+IenRUekoYsHZqGkREUgx0VvlEsgm7nCDW9g=="
+    crossorigin="">
+  <script src="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.js"
+    integrity="sha512-HrFUyCEtIpxZloTgEKKMq4RFYhxjJkCiF5sDxuAokklOeZ68U2NPfh4MFtyIVWlsKtVbK5GD2/JzFyAfvT5ejA=="
+    crossorigin=""></script>
+
+    <!-- Load styles -->
     <link rel="stylesheet" type="text/css" href="css/styles.css">
+    
     <title>Bucket List</title>
 </head>
 

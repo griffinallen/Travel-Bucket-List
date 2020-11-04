@@ -10,6 +10,16 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     accessToken: 'pk.eyJ1IjoiZ2FsbGVuMTk5OSIsImEiOiJja2d3cmI5bWkwY3pxMzFwbmgwMmhlajk4In0.ZPpCyzJ_4pGPb2ujRkxqbQ'
 }).addTo(mymap);
 
+var searchControl = L.esri.Geocoding.geosearch().addTo(mymap);
+var results = L.layerGroup().addTo(mymap);
+
+  searchControl.on('results', function (data) {
+    results.clearLayers();
+    for (var i = data.results.length - 1; i >= 0; i--) {
+      results.addLayer(L.marker(data.results[i].latlng));
+    }
+  });
+
 var sidebar = L.control.sidebar({
     autopan: false,
     closeButton: true,    // whether to add a close button to the panes
