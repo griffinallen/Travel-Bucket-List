@@ -10,6 +10,7 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     accessToken: 'pk.eyJ1IjoiZ2FsbGVuMTk5OSIsImEiOiJja2d3cmI5bWkwY3pxMzFwbmgwMmhlajk4In0.ZPpCyzJ_4pGPb2ujRkxqbQ'
 }).addTo(mymap);
 
+var geocodeService = L.esri.Geocoding.geocodeService();
 var searchControl = L.esri.Geocoding.geosearch().addTo(mymap);
 var results = L.layerGroup().addTo(mymap);
 
@@ -21,16 +22,16 @@ var results = L.layerGroup().addTo(mymap);
   });
 
 var sidebar = L.control.sidebar({
-    autopan: false,
+    autopan: true,
     closeButton: true,    // whether to add a close button to the panes
     container: 'sidebar', // the DOM container or #ID of a predefined sidebar container that should be used
     position: 'left',     // left or right
 }).addTo(mymap);
 
 sidebar.addPanel({
-    id:   'Home',
+    id:   'BucketList',
     tab:  '<i class="fas fa-bars"></i>',
-    title: 'Home',
+    title: 'Bucket List',
     pane: '<ul id="ulCoordinates"></ol>',
 }).addPanel({
     id:   'js-api',
@@ -65,7 +66,7 @@ async function readCoordinates() {
         const result = await fetch("http://localhost:8080/coordinates", { method: "GET" });
         const coordinates = await result.json();
         coordinates.forEach(t => {
-            addCoordinateToList(t);
+            addCoordinateToList(t.x, t.y, t.name, t.visited);
         });
     }
     catch (e) {
@@ -75,13 +76,13 @@ async function readCoordinates() {
 }
 
 
-async function addCoordinateToList(coordinate){
-    console.log(coordinate);
+async function addCoordinateToList(x, y, name, visited){
+    console.log(x + ", " + y + ", " + name + ", " + visited);
     const ulCoordinates = document.getElementById("ulCoordinates")
     const li = document.createElement("li")
-    li.textContent = coordinate.id + ": " + coordinate.x + ", " + coordinate.y + ", " + coordinate.name + ", " + coordinate.visited;
-    li.id = coordinate.id;
-    var marker = L.marker([coordinate.x, coordinate.y]);
+    li.textContent = x + ", " + y + ", " + name + ", " + visited;
+    li.id = x + ", " + y;
+    var marker = L.marker([x, y]);
     marker.on('click', function(e){
         L.DomEvent.stopPropagation(e);
         fetch("http://localhost:8080/coordinates", {
@@ -98,25 +99,37 @@ async function addCoordinateToList(coordinate){
 }
 
 
-
+sidebar.on('content', function(e) {
+    console.log(e.id);
+})
 
 /**
  * On a map click, add a bucket list item
  * @param {*} e event
  */
 async function onMapClick(e) {
-    await fetch("http://localhost:8080/coordinates", { 
-        method: "POST", 
-        headers: {"content-type": "application/json"},
-        body: JSON.stringify({"x":e.latlng.lat, "y":e.latlng.lng, "name":"3", "visited": "false"})
+    geocodeService.reverse().latlng(e.latlng)
+    .run(async function (error, result) {
+        if (error) {
+          return;
+        }
+        console.log(result.address.Match_addr);
+        
+        sidebar.removePanel('Clicked');
+        sidebar.addPanel({
+            id:   "Clicked",
+            tab:  '<i class="fas fa-bars"></i>',
+            title: result.address.Match_addr,
+            pane: '<p><button onclick="sidebar.enablePanel(\'mail\')">enable mails panel</button></p>',
+        }).open("Clicked");
+
+        await fetch("http://localhost:8080/coordinates", { 
+            method: "POST", 
+            headers: {"content-type": "application/json"},
+            body: JSON.stringify({"x":e.latlng.lat, "y":e.latlng.lng, "name": result.address.Match_addr, "visited": "false"})
+        });
+        addCoordinateToList(e.latlng.lat, e.latlng.lng, result.address.Match_addr, false);
     });
-    const result = await fetch("http://localhost:8080/specificCoordinate?" + new URLSearchParams({
-        x: e.latlng.lat,
-        y: e.latlng.lng
-    }), { method: "GET"});
-    const coordinates = await result.json();
-    coordinates.forEach(t => {
-        addCoordinateToList(t);
-    });
+    
 }
 mymap.on('click', onMapClick);

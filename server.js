@@ -8,7 +8,7 @@ const client = new Client({
     user: "postgres",
     password: "penguin", 
     host: "localhost",
-    port: "5440",
+    port: "5432",
     database: "griffin"
 })
 
@@ -63,7 +63,7 @@ app.put('/coordinates', async (req, res) =>{
     let result = {}
     try{
         const reqJson = req.body;
-        await updateCoordinate(reqJson.id, reqJson.x, reqJson.y, reqJson.name, reqJson.visited);
+        await updateCoordinate(reqJson.x, reqJson.y, reqJson.name, reqJson.visited);
         result.success=true;
     }
     catch(e){
@@ -187,14 +187,13 @@ async function addCoordinate(x, y, name, visited){
 
 /**
  * Update item in the bucket list
- * @param {int} id new id
  * @param {*} x new x coordinate
  * @param {*} y new y coordinate
  * @param {String} name new name
  * @param {bool} visited new visited
  * @return {boolean} true if successfully updated, false otherwise
  */
-async function updateCoordinate(id, x, y, name, visited){
+async function updateCoordinate(x, y, name, visited){
     try {
         await client.query("UPDATE coordinates SET x = " + x + ", y = " + y +", name = '" + name + "', visited = " + visited + " WHERE x = " + x + " AND y = " + y);
         return true;
