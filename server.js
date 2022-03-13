@@ -1,3 +1,4 @@
+require('dotenv').config()
 const {Client} = require("pg")
 const express = require("express")
 const app = express();
@@ -5,12 +6,14 @@ app.use(express.json())
 app.use(express.static(__dirname));
 
 const client = new Client({
-    user: "postgres",
-    password: "penguin", 
-    host: "localhost",
-    port: "5432",
-    database: "griffin"
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS, 
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_DATABASE
 })
+
+console.log(client)
 
 app.get('/', (req, res) => res.sendFile(`${__dirname}/index.html`))
 
@@ -30,7 +33,7 @@ app.get('/specificCoordinate', async (req, res) =>{
     console.log("MADE IT")
     const reqJson = req.query;
     console.log(req.query);
-    const result = await getSpecificCoordinate(reqJson.x, reqJson.y);
+    const result = await getSpecificCoordinate(reqJson.lng, reqJson.lat);
     console.log(result);
     res.setHeader("content-type", "application/json")
     res.send(JSON.stringify(result))
@@ -40,10 +43,11 @@ app.get('/specificCoordinate', async (req, res) =>{
  * Accept http POST call and create a coordinate
  */
 app.post('/coordinates', async (req, res) =>{
+    console.log("post received")
     let result = {}
     try{
         const reqJson = req.body;
-        await addCoordinate(reqJson.x, reqJson.y, reqJson.name, reqJson.visited);
+        await addCoordinate(reqJson.name, reqJson.lng, reqJson.lat);
         result.success = true;
     }
     catch(e){
@@ -82,7 +86,7 @@ app.delete('/coordinates', async (req, res) =>{
     let result = {}
     try{
         const reqJson = req.body;
-        await deleteCoordinate(reqJson.x, reqJson.y);
+        await deleteCoordinate(reqJson.name);
         result.success=true;
     }
     catch(e){
@@ -108,14 +112,14 @@ async function execute(){
     console.log("connection successful")
     var coordinates = await readCoordinates();
     console.table(coordinates);
-    const sucCreate = await addCoordinate(-1,-1,'test',false);
+    const sucCreate = await addCoordinate('test',false);
     console.log(`Add was ${sucCreate}`);
     coordinates = await readCoordinates();
     console.table(coordinates);
-    const sucDelete = await deleteCoordinate(-1, -1);
-    console.log(`Delete was ${sucDelete}`);
-    coordinates = await readCoordinates();
-    console.table(coordinates);
+    //const sucDelete = await deleteCoordinate(-1, -1);
+    //console.log(`Delete was ${sucDelete}`);
+    //coordinates = await readCoordinates();
+    //console.table(coordinates);
 }
 
 /**
@@ -136,7 +140,8 @@ async function connectToDB(){
  */
 async function readCoordinates(){
     try {
-        const results = await client.query("SELECT * FROM coordinates")
+        const results = await client.query("SELECT name, ST_X (ST_Transform (geom, 4326)) AS lng, ST_Y (ST_Transform (geom, 4326)) AS lat FROM coordinates")
+        console.log(results.rows)
         return results.rows;
     }
     catch(e){
@@ -152,10 +157,9 @@ async function readCoordinates(){
  * @param {*} y y coordinate of item
  * @return {Array} true if we get a coordinate from the bucket list, false otherwise
  */
-async function getSpecificCoordinate(x, y){
+async function getSpecificCoordinate(name){
     try {
-        console.log(x + " " + y)
-        const results = await client.query("SELECT * FROM coordinates WHERE x = " + x + " AND y = " + y);
+        const results = await client.query("SELECT * FROM coordinates WHERE namne = '" + name + "'");
         return results.rows;
     }
     catch(e){
@@ -174,10 +178,12 @@ async function getSpecificCoordinate(x, y){
  * @param {boolean} visited whether the place has been visited or not
  * @return {boolean} true if successfully added, false otherwise
  */
-async function addCoordinate(x, y, name, visited){
+async function addCoordinate(name, lng, lat){
     try {
-        console.log("add: " + x + " " + y)
-        await client.query("INSERT INTO coordinates(x,y,name,visited) VALUES (" + x + "," + y + ",'" + name + "'," + visited + ")");
+        console.log("add: " + lng + ", " + lat)
+        //ST_Point(x, y)
+        console.log("INSERT INTO coordinates(name,geom) VALUES ('" + name + "'," + "ST_Point(" + lng + ", " + lat + ")")
+        await client.query("INSERT INTO coordinates(name,geom) VALUES ('" + name + "'," + "ST_Point(" + lng + ", " + lat + "))");
         return true;
     }
     catch(e){
@@ -193,7 +199,7 @@ async function addCoordinate(x, y, name, visited){
  * @param {bool} visited new visited
  * @return {boolean} true if successfully updated, false otherwise
  */
-async function updateCoordinate(x, y, name, visited){
+async function updateCoordinate(name, geom){
     try {
         await client.query("UPDATE coordinates SET x = " + x + ", y = " + y +", name = '" + name + "', visited = " + visited + " WHERE x = " + x + " AND y = " + y);
         return true;
@@ -210,10 +216,10 @@ async function updateCoordinate(x, y, name, visited){
  * @param {*} y y coordinate of item to remove
  * @return {boolean} true if successfully deleted, false otherwise
  */
-async function deleteCoordinate(x, y){
+async function deleteCoordinate(name){
     try {
-        console.log("delete" + x + ", " + y);
-        await client.query("delete from coordinates where x = " + x + " AND y =" + y);
+        console.log("delete " + name);
+        await client.query("delete from coordinates where name = '" + name + "'");
         return true;
     }
     catch(e){
